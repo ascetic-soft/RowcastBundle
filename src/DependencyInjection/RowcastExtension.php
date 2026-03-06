@@ -16,43 +16,48 @@ use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
 use AsceticSoft\RowcastSchema\Introspector\IntrospectorFactory;
 use AsceticSoft\RowcastSchema\Migration\DatabaseMigrationRepository;
+use AsceticSoft\RowcastSchema\Migration\MigrationGenerator;
 use AsceticSoft\RowcastSchema\Migration\MigrationLoader;
 use AsceticSoft\RowcastSchema\Migration\MigrationRepositoryInterface;
 use AsceticSoft\RowcastSchema\Migration\MigrationRunner;
-use AsceticSoft\RowcastSchema\Migration\MigrationGenerator;
 use AsceticSoft\RowcastSchema\Parser\SchemaParserInterface;
 use AsceticSoft\RowcastSchema\Platform\PlatformFactory;
 use AsceticSoft\RowcastSchema\Platform\PlatformInterface;
+use Symfony\Component\Config\Definition\ConfigurationInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\HttpKernel\DependencyInjection\ConfigurableExtension;
 
-class RowcastExtension extends Extension
+class RowcastExtension extends ConfigurableExtension
 {
-    /**
-     * @param array<mixed> $configs
-     */
-    public function load(array $configs, ContainerBuilder $container): void
+    public function getConfiguration(array $config, ContainerBuilder $container): ?ConfigurationInterface
     {
-        $configuration = new Configuration();
-        /** @var array{
-         *     connection: array{
-         *         dsn: string,
-         *         username: ?string,
-         *         password: ?string,
-         *         options: array<mixed>,
-         *         nest_transactions: bool
-         *     },
-         *     schema: array{
-         *         path: string,
-         *         migrations_path: string,
-         *         migration_table: string,
-         *         ignore_tables: array<int, string>
-         *     }
-         * } $config
-         */
-        $config = $this->processConfiguration($configuration, $configs);
+        return new Configuration();
+    }
+
+    /**
+     * @param array{
+     *     connection: array{
+     *         dsn: string,
+     *         username: ?string,
+     *         password: ?string,
+     *         options: array<mixed>,
+     *         nest_transactions: bool
+     *     },
+     *     schema: array{
+     *         path: string,
+     *         migrations_path: string,
+     *         migration_table: string,
+     *         ignore_tables: array<int, string>
+     *     }
+     * } $mergedConfig
+     */
+    protected function loadInternal(array $mergedConfig, ContainerBuilder $container): void
+    {
+        // ConfigurableExtension already validates and merges config.
+        // Reprocessing here breaks nested options (connection/schema).
+        $config = $mergedConfig;
 
         $container->setParameter('rowcast.schema.path', $config['schema']['path']);
         $container->setParameter('rowcast.schema.migrations_path', $config['schema']['migrations_path']);
@@ -75,6 +80,7 @@ class RowcastExtension extends Extension
             ->setAutoconfigured(true);
 
         $container->register('rowcast.pdo')
+            ->setClass(\PDO::class)
             ->setFactory([new Reference(Connection::class), 'getPdo']);
 
         if (!$this->isRowcastSchemaAvailable()) {

@@ -6,21 +6,9 @@ namespace AsceticSoft\RowcastBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
-use Symfony\Component\Config\FileLocator;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 final class Configuration implements ConfigurationInterface
 {
-    protected function loadInternal(array $mergedConfig, ContainerBuilder $container): void
-    {
-        $loader = new YamlFileLoader(
-            $container,
-            new FileLocator(__DIR__ . '/../../config')
-        );
-        $loader->load('services.yml');
-    }
-
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('rowcast');

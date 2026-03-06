@@ -37,6 +37,7 @@ final class RowcastExtensionTest extends TestCase
         self::assertTrue($container->hasAlias(ConnectionInterface::class));
         self::assertTrue($container->hasDefinition(DataMapper::class));
         self::assertTrue($container->hasDefinition('rowcast.pdo'));
+        self::assertSame(\PDO::class, $container->getDefinition('rowcast.pdo')->getClass());
 
         self::assertTrue($container->hasDefinition(MigrationRunner::class));
         self::assertTrue($container->hasDefinition(RowcastDiffCommand::class));
@@ -78,5 +79,45 @@ final class RowcastExtensionTest extends TestCase
         self::assertFalse($container->hasDefinition(RowcastMigrateCommand::class));
         self::assertFalse($container->hasDefinition(RowcastRollbackCommand::class));
         self::assertFalse($container->hasDefinition(RowcastStatusCommand::class));
+    }
+
+    public function test_it_accepts_already_processed_merged_configuration(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new class extends RowcastExtension {
+            public function testLoadInternal(array $mergedConfig, ContainerBuilder $container): void
+            {
+                $this->loadInternal($mergedConfig, $container);
+            }
+
+            protected function isRowcastSchemaAvailable(): bool
+            {
+                return false;
+            }
+
+            protected function isConsoleAvailable(): bool
+            {
+                return false;
+            }
+        };
+
+        $extension->testLoadInternal([
+            'connection' => [
+                'dsn' => 'sqlite::memory:',
+                'username' => null,
+                'password' => null,
+                'options' => [],
+                'nest_transactions' => false,
+            ],
+            'schema' => [
+                'path' => '/tmp/schema.php',
+                'migrations_path' => '/tmp/migrations',
+                'migration_table' => '_rowcast_migrations',
+                'ignore_tables' => [],
+            ],
+        ], $container);
+
+        self::assertTrue($container->hasDefinition(Connection::class));
+        self::assertSame(\PDO::class, $container->getDefinition('rowcast.pdo')->getClass());
     }
 }
