@@ -45,7 +45,11 @@
     },
     "extra": {
         "symfony": {
-            "bundle": "AsceticSoft\\RowcastBundle\\RowcastBundle"
+            "bundle": "AsceticSoft\\RowcastBundle\\RowcastBundle",
+            "endpoint": [
+                "https://api.github.com/repos/ABorodulin/rowcast-bundle-recipes/contents/index.json",
+                "flex://defaults"
+            ]
         }
     }
 }

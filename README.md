@@ -32,6 +32,31 @@ return [
 ];
 ```
 
+## Symfony Flex private recipe
+
+For automatic creation of `config/packages/rowcast.yaml` and `.env` variables, use a private Symfony Flex recipe repository.
+
+Prepared recipe files are located in:
+
+- `../RowcastBundleRecipes/index.json`
+- `../RowcastBundleRecipes/ascetic-soft.rowcast-bundle.1.0.json`
+
+Current endpoint configured in `composer.json`:
+
+```json
+"extra": {
+    "symfony": {
+        "bundle": "AsceticSoft\\RowcastBundle\\RowcastBundle",
+        "endpoint": [
+            "https://api.github.com/repos/ABorodulin/rowcast-bundle-recipes/contents/index.json",
+            "flex://defaults"
+        ]
+    }
+}
+```
+
+Before using in production, replace `ABorodulin/rowcast-bundle-recipes` with your real GitHub account/repository and ensure the recipe JSON files are published at that endpoint.
+
 ## Configuration
 
 Create `config/packages/rowcast.yaml`:
