@@ -14,5 +14,4 @@ final class RowcastBundle extends Bundle
     {
         return new RowcastExtension();
     }
-
 }
