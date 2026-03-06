@@ -1,0 +1,33 @@
+parameters:
+  env(DATABASE_DSN): ''
+  env(DATABASE_USER): ''
+  env(DATABASE_PASSWORD): ''
+  env(DATABASE_NESTED_TRANSACTIONS): true
+
+  rowcast.database_dsn: '%env(DATABASE_DSN)%'
+  rowcast.database_user: '%env(DATABASE_USER)%'
+  rowcast.database_password: '%env(DATABASE_PASSWORD)%'
+  rowcast.database_nested_transactions: '%env(bool:DATABASE_NESTED_TRANSACTIONS)%'
+
+services:
+  _defaults:
+    autowire: true
+
+  rowcast.pdo:
+    class: PDO
+    factory: [ '@AsceticSoft\Rowcast\Connection', 'getPdo' ]
+
+  AsceticSoft\Rowcast\Connection:
+    lazy: true
+    factory: [AsceticSoft\Rowcast\Connection, create]
+    arguments:
+      $dsn: '%rowcast.database_dsn%'
+      $username: '%rowcast.database_user%'
+      $password: '%rowcast.database_password%'
+      $nestTransactions: '%rowcast.database_nested_transactions%'
+
+  AsceticSoft\Rowcast\ConnectionInterface: '@AsceticSoft\Rowcast\Connection'
+
+  AsceticSoft\Rowcast\DataMapper:
+    arguments:
+      - '@AsceticSoft\Rowcast\ConnectionInterface'
