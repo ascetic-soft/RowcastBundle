@@ -1,0 +1,51 @@
+{
+    "name": "ascetic-soft/rowcast-bundle",
+    "description": "Symfony bundle integration for Rowcast and RowcastSchema",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "keywords": [
+        "symfony",
+        "bundle",
+        "rowcast",
+        "database",
+        "migration"
+    ],
+    "authors": [
+        {
+            "name": "Andrey Borodulin",
+            "email": "borodulin@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.4",
+        "ext-pdo": "*",
+        "ascetic-soft/rowcast": "^1.0",
+        "symfony/config": "^7.0",
+        "symfony/dependency-injection": "^7.0",
+        "symfony/http-kernel": "^7.0"
+    },
+    "require-dev": {
+        "ascetic-soft/rowcast-schema": "^0.2",
+        "phpunit/phpunit": "^11.0",
+        "symfony/console": "^7.0"
+    },
+    "suggest": {
+        "ascetic-soft/rowcast-schema": "Required for schema migrations and rowcast:* schema commands",
+        "symfony/console": "Required for console commands"
+    },
+    "autoload": {
+        "psr-4": {
+            "AsceticSoft\\RowcastBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AsceticSoft\\RowcastBundle\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "symfony": {
+            "bundle": "AsceticSoft\\RowcastBundle\\RowcastBundle"
+        }
+    }
+}
