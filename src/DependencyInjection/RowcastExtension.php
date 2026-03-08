@@ -8,6 +8,7 @@ use AsceticSoft\Rowcast\Connection;
 use AsceticSoft\Rowcast\ConnectionInterface;
 use AsceticSoft\Rowcast\DataMapper;
 use AsceticSoft\RowcastBundle\Command\RowcastDiffCommand;
+use AsceticSoft\RowcastBundle\Command\RowcastMakeCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastMigrateCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastRollbackCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastStatusCommand;
@@ -137,6 +138,13 @@ class RowcastExtension extends ConfigurableExtension
                 '%rowcast.schema.path%',
                 '%rowcast.schema.migrations_path%',
             ])
+            ->addTag('console.command');
+        $container->register(RowcastMakeCommand::class)
+            ->setArguments([
+                new Reference(MigrationGenerator::class),
+                '%rowcast.schema.migrations_path%',
+            ])
+            ->setAutoconfigured(true)
             ->addTag('console.command');
         $container->register(RowcastMigrateCommand::class)
             ->setArguments([

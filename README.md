@@ -105,6 +105,7 @@ Schema services (only when `ascetic-soft/rowcast-schema` is installed):
 When both `ascetic-soft/rowcast-schema` and `symfony/console` are available:
 
 - `bin/console rowcast:diff [--dry-run]`
+- `bin/console rowcast:make`
 - `bin/console rowcast:migrate`
 - `bin/console rowcast:rollback [--step=1]`
 - `bin/console rowcast:status`

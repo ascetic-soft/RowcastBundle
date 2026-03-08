@@ -8,6 +8,7 @@ use AsceticSoft\Rowcast\Connection;
 use AsceticSoft\Rowcast\ConnectionInterface;
 use AsceticSoft\Rowcast\DataMapper;
 use AsceticSoft\RowcastBundle\Command\RowcastDiffCommand;
+use AsceticSoft\RowcastBundle\Command\RowcastMakeCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastMigrateCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastRollbackCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastStatusCommand;
@@ -41,6 +42,7 @@ final class RowcastExtensionTest extends TestCase
 
         self::assertTrue($container->hasDefinition(MigrationRunner::class));
         self::assertTrue($container->hasDefinition(RowcastDiffCommand::class));
+        self::assertTrue($container->hasDefinition(RowcastMakeCommand::class));
         self::assertTrue($container->hasDefinition(RowcastMigrateCommand::class));
         self::assertTrue($container->hasDefinition(RowcastRollbackCommand::class));
         self::assertTrue($container->hasDefinition(RowcastStatusCommand::class));
@@ -76,6 +78,7 @@ final class RowcastExtensionTest extends TestCase
 
         self::assertFalse($container->hasDefinition(MigrationRunner::class));
         self::assertFalse($container->hasDefinition(RowcastDiffCommand::class));
+        self::assertFalse($container->hasDefinition(RowcastMakeCommand::class));
         self::assertFalse($container->hasDefinition(RowcastMigrateCommand::class));
         self::assertFalse($container->hasDefinition(RowcastRollbackCommand::class));
         self::assertFalse($container->hasDefinition(RowcastStatusCommand::class));
