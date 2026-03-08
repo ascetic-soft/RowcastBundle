@@ -12,6 +12,7 @@ use AsceticSoft\RowcastBundle\Command\RowcastMakeCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastMigrateCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastRollbackCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastStatusCommand;
+use AsceticSoft\RowcastSchema\Cli\OperationDescriber;
 use AsceticSoft\RowcastBundle\Factory\SchemaParserFactory;
 use AsceticSoft\RowcastSchema\Cli\TableIgnoreMatcher;
 use AsceticSoft\RowcastSchema\Diff\SchemaDiffer;
@@ -106,6 +107,7 @@ class RowcastExtension extends ConfigurableExtension
                 '%rowcast.schema.ignore_tables%',
                 '%rowcast.schema.migration_table%',
             ]);
+        $container->register(OperationDescriber::class);
         $container->register(DatabaseMigrationRepository::class)
             ->setArguments([
                 new Reference('rowcast.pdo'),
@@ -134,6 +136,7 @@ class RowcastExtension extends ConfigurableExtension
                 new Reference(SchemaDiffer::class),
                 new Reference(MigrationGenerator::class),
                 new Reference(TableIgnoreMatcher::class),
+                new Reference(OperationDescriber::class),
                 new Reference('rowcast.pdo'),
                 '%rowcast.schema.path%',
                 '%rowcast.schema.migrations_path%',
@@ -170,6 +173,7 @@ class RowcastExtension extends ConfigurableExtension
                 new Reference(MigrationLoader::class),
                 new Reference(MigrationRepositoryInterface::class),
                 new Reference(TableIgnoreMatcher::class),
+                new Reference(OperationDescriber::class),
                 new Reference('rowcast.pdo'),
                 '%rowcast.schema.path%',
                 '%rowcast.schema.migrations_path%',

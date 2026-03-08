@@ -10,6 +10,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(name: 'rowcast:rollback', description: 'Rollback RowcastSchema migrations')]
 final class RowcastRollbackCommand extends Command
@@ -28,11 +29,37 @@ final class RowcastRollbackCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $io = new SymfonyStyle($input, $output);
+
         $step = (int) $input->getOption('step');
         $step = max(1, $step);
+        $io->title(\sprintf('Rowcast -- rollback (step: %d)', $step));
 
-        $count = $this->runner->rollback($this->migrationsPath, $step);
-        $output->writeln(\sprintf('Rolled back migrations: %d', $count));
+        $rolledBackVersions = [];
+        $count = $this->runner->rollback(
+            $this->migrationsPath,
+            $step,
+            static function (string $version) use (&$rolledBackVersions): void {
+                $rolledBackVersions[] = $version;
+            },
+        );
+
+        if ($count === 0) {
+            $io->success('Nothing to rollback.');
+            return Command::SUCCESS;
+        }
+
+        $io->info('Rolling back migrations...');
+        $io->newLine();
+        foreach ($rolledBackVersions as $version) {
+            $io->writeln(\sprintf('    <fg=green>[OK]</> %s', $version));
+        }
+        $io->newLine();
+        $io->success(\sprintf(
+            'Rolled back %d %s.',
+            $count,
+            $count === 1 ? 'migration' : 'migrations',
+        ));
 
         return Command::SUCCESS;
     }
