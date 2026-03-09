@@ -77,6 +77,29 @@ rowcast:
     ignore_tables: []
 ```
 
+### Attributes schema support
+
+`rowcast.schema.path` can point either to:
+
+- a schema file (`.php`, `.yaml`, `.yml`)
+- a directory with classes that contain Rowcast attributes
+
+Parser selection is automatic:
+
+- if `path` is a directory and `AttributeSchemaParser` is available, bundle uses attribute parser
+- otherwise bundle uses file parser based on file extension
+
+Example for attribute-based schema:
+
+```yaml
+rowcast:
+  schema:
+    path: '%kernel.project_dir%/src/Entity'
+    migrations_path: '%kernel.project_dir%/database/migrations'
+    migration_table: '_rowcast_migrations'
+    ignore_tables: []
+```
+
 ## Registered services
 
 Core services (always):
