@@ -8,6 +8,7 @@ use AsceticSoft\RowcastProfiler\QueryProfileStoreInterface;
 use Symfony\Bundle\FrameworkBundle\DataCollector\AbstractDataCollector;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\VarDumper\Cloner\Data;
 
 /**
  * @psalm-type ProfileArray = array<string, mixed>
@@ -86,5 +87,14 @@ final class RowcastDataCollector extends AbstractDataCollector
     public function getSlowCount(): int
     {
         return (int) ($this->data['slow_count'] ?? 0);
+    }
+
+    /**
+     * Wraps profiler data for {@see \Symfony\Bundle\WebProfilerBundle\Twig\WebProfilerExtension::profilerDump}.
+     * Symfony 7+ requires {@see Data}, not a plain array.
+     */
+    public function cloneVarForProfiler(mixed $var): Data
+    {
+        return $this->cloneVar($var);
     }
 }

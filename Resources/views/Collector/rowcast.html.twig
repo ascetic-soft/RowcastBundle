@@ -111,7 +111,7 @@
                         <td>
                             <pre style="white-space:pre-wrap;margin:0">{{ p.sql_normalized|e }}</pre>
                             {% if p.params is not empty %}
-                                <details><summary>Params</summary>{{ profiler_dump(p.params, maxDepth=2) }}</details>
+                                <details><summary>Params</summary>{{ profiler_dump(collector.cloneVarForProfiler(p.params)) }}</details>
                             {% endif %}
                             {% if p.error_message %}
                                 <p class="text-muted">{{ p.error_class|e }}: {{ p.error_message|e }}</p>
