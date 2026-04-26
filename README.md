@@ -15,12 +15,15 @@ Symfony bundle for integrating:
 - Optional:
   - `ascetic-soft/rowcast-schema`
   - `symfony/console`
+  - `ascetic-soft/rowcast-profiler` (+ `symfony/framework-bundle` for the profiler panel)
 
 ## Installation
 
 ```bash
 composer require ascetic-soft/rowcast-bundle
 ```
+
+**Monorepo / contributing:** if `ascetic-soft/rowcast-profiler` is not on Packagist yet, add a path repository in `composer.json` (see this repo’s `RowcastBundle/composer.json`) so `^1.0` resolves to the sibling `RowcastProfiler` directory. Remove the path repository after the profiler is published.
 
 If Symfony Flex does not auto-register the bundle, add it manually to `config/bundles.php`:
 
@@ -75,7 +78,32 @@ rowcast:
     migrations_path: '%kernel.project_dir%/database/migrations'
     migration_table: '_rowcast_migrations'
     ignore_tables: []
+
+  profiler:
+    enabled: false
+    collect_params: true
+    slow_query_threshold_ms: 50
+    max_queries: 500
 ```
+
+### SQL profiler (optional)
+
+Install the profiler package and enable it in config (e.g. only in `dev`):
+
+```bash
+composer require ascetic-soft/rowcast-profiler
+# For the web debug toolbar / profiler UI:
+composer require symfony/web-profiler-bundle --dev
+```
+
+```yaml
+# config/packages/dev/rowcast.yaml
+rowcast:
+    profiler:
+        enabled: true
+```
+
+When `profiler.enabled` is `true` and the package is present, the bundle decorates `AsceticSoft\Rowcast\Connection` with `ConnectionProfiler`, resets the query store between requests (`kernel.reset`), and registers `RowcastDataCollector` if `symfony/framework-bundle` is installed (toolbar + profiler panel **Rowcast**).
 
 ### Attributes schema support
 
@@ -108,6 +136,15 @@ Core services (always):
 - alias `AsceticSoft\Rowcast\ConnectionInterface` -> `AsceticSoft\Rowcast\Connection`
 - `AsceticSoft\Rowcast\DataMapper`
 - `rowcast.pdo` (factory: `Connection::getPdo()`)
+
+Profiler services (only when `profiler.enabled` is true and `ascetic-soft/rowcast-profiler` is installed):
+
+- `AsceticSoft\RowcastProfiler\InMemoryQueryProfileStore` (tag `kernel.reset`)
+- `AsceticSoft\RowcastProfiler\DefaultParameterSanitizer`
+- `AsceticSoft\RowcastProfiler\SqlClassifier`
+- `AsceticSoft\RowcastProfiler\RowcastProfiler`
+- `AsceticSoft\RowcastProfiler\ConnectionProfiler` (decorates `AsceticSoft\Rowcast\Connection`)
+- `AsceticSoft\RowcastBundle\DataCollector\RowcastDataCollector` (when `symfony/framework-bundle` is available)
 
 Schema services (only when `ascetic-soft/rowcast-schema` is installed):
 

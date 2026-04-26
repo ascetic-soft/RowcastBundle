@@ -52,6 +52,12 @@ class RowcastExtension extends ConfigurableExtension
      *         migrations_path: string,
      *         migration_table: string,
      *         ignore_tables: array<int, string>
+     *     },
+     *     profiler: array{
+     *         enabled: bool,
+     *         collect_params: bool,
+     *         slow_query_threshold_ms: float,
+     *         max_queries: int
      *     }
      * } $mergedConfig
      */
@@ -84,6 +90,8 @@ class RowcastExtension extends ConfigurableExtension
         $container->register('rowcast.pdo')
             ->setClass(\PDO::class)
             ->setFactory([new Reference(Connection::class), 'getPdo']);
+
+        $this->registerProfilerIfEnabled($config, $container);
 
         if (!$this->isRowcastSchemaAvailable()) {
             return;
@@ -191,5 +199,68 @@ class RowcastExtension extends ConfigurableExtension
     protected function isConsoleAvailable(): bool
     {
         return class_exists(Command::class);
+    }
+
+    /**
+     * @param array{
+     *     profiler: array{
+     *         enabled: bool,
+     *         collect_params: bool,
+     *         slow_query_threshold_ms: float,
+     *         max_queries: int
+     *     }
+     * } $config
+     */
+    private function registerProfilerIfEnabled(array $config, ContainerBuilder $container): void
+    {
+        $profilerConfig = $config['profiler'];
+
+        if (!$profilerConfig['enabled'] || !class_exists(\AsceticSoft\RowcastProfiler\ConnectionProfiler::class)) {
+            return;
+        }
+
+        $storeClass = \AsceticSoft\RowcastProfiler\InMemoryQueryProfileStore::class;
+        $sanitizerClass = \AsceticSoft\RowcastProfiler\DefaultParameterSanitizer::class;
+        $classifierClass = \AsceticSoft\RowcastProfiler\SqlClassifier::class;
+        $profilerClass = \AsceticSoft\RowcastProfiler\RowcastProfiler::class;
+        $connectionProfilerClass = \AsceticSoft\RowcastProfiler\ConnectionProfiler::class;
+
+        $container->register($storeClass)
+            ->setArguments([$profilerConfig['max_queries']])
+            ->addTag('kernel.reset', ['method' => 'reset']);
+
+        $container->register($sanitizerClass);
+
+        $container->register($classifierClass);
+
+        $container->register($profilerClass)
+            ->setArguments([
+                new Reference($storeClass),
+                new Reference($sanitizerClass),
+                new Reference($classifierClass),
+                $profilerConfig['slow_query_threshold_ms'],
+                $profilerConfig['collect_params'],
+            ]);
+
+        $container->register($connectionProfilerClass)
+            ->setDecoratedService(Connection::class)
+            ->setArguments([
+                new Reference('.inner'),
+                new Reference($profilerClass),
+            ]);
+
+        if (!class_exists(\Symfony\Bundle\FrameworkBundle\DataCollector\AbstractDataCollector::class)) {
+            return;
+        }
+
+        $collectorClass = \AsceticSoft\RowcastBundle\DataCollector\RowcastDataCollector::class;
+
+        $container->register($collectorClass)
+            ->setArguments([new Reference($storeClass)])
+            ->addTag('data_collector', [
+                'id' => 'rowcast',
+                'template' => '@Rowcast/Collector/rowcast.html.twig',
+                'priority' => 255,
+            ]);
     }
 }

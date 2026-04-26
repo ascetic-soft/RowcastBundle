@@ -12,7 +12,11 @@ use AsceticSoft\RowcastBundle\Command\RowcastMakeCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastMigrateCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastRollbackCommand;
 use AsceticSoft\RowcastBundle\Command\RowcastStatusCommand;
+use AsceticSoft\RowcastBundle\DataCollector\RowcastDataCollector;
 use AsceticSoft\RowcastBundle\DependencyInjection\RowcastExtension;
+use AsceticSoft\RowcastProfiler\ConnectionProfiler;
+use AsceticSoft\RowcastProfiler\InMemoryQueryProfileStore;
+use AsceticSoft\RowcastProfiler\RowcastProfiler;
 use AsceticSoft\RowcastSchema\Migration\MigrationRunner;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -112,6 +116,12 @@ final class RowcastExtensionTest extends TestCase
                 'options' => [],
                 'nest_transactions' => false,
             ],
+            'profiler' => [
+                'enabled' => false,
+                'collect_params' => true,
+                'slow_query_threshold_ms' => 50.0,
+                'max_queries' => 500,
+            ],
             'schema' => [
                 'path' => '/tmp/schema.php',
                 'migrations_path' => '/tmp/migrations',
@@ -122,5 +132,80 @@ final class RowcastExtensionTest extends TestCase
 
         self::assertTrue($container->hasDefinition(Connection::class));
         self::assertSame(\PDO::class, $container->getDefinition('rowcast.pdo')->getClass());
+    }
+
+    public function test_it_registers_profiler_services_when_enabled(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new RowcastExtension();
+
+        $extension->load([
+            [
+                'connection' => [
+                    'dsn' => 'sqlite::memory:',
+                ],
+                'profiler' => [
+                    'enabled' => true,
+                    'collect_params' => true,
+                    'slow_query_threshold_ms' => 25.0,
+                    'max_queries' => 100,
+                ],
+            ],
+        ], $container);
+
+        self::assertTrue($container->hasDefinition(InMemoryQueryProfileStore::class));
+        self::assertTrue($container->hasDefinition(RowcastProfiler::class));
+        self::assertTrue($container->hasDefinition(ConnectionProfiler::class));
+        self::assertTrue($container->hasDefinition(RowcastDataCollector::class));
+
+        $decorated = $container->getDefinition(ConnectionProfiler::class)->getDecoratedService();
+        self::assertNotNull($decorated);
+        self::assertSame(Connection::class, $decorated[0]);
+    }
+
+    public function test_it_does_not_register_profiler_when_disabled(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new RowcastExtension();
+
+        $extension->load([
+            [
+                'connection' => [
+                    'dsn' => 'sqlite::memory:',
+                ],
+                'profiler' => [
+                    'enabled' => false,
+                ],
+            ],
+        ], $container);
+
+        self::assertFalse($container->hasDefinition(ConnectionProfiler::class));
+        self::assertFalse($container->hasDefinition(RowcastDataCollector::class));
+    }
+
+    public function test_profiler_decorator_receives_inner_connection(): void
+    {
+        $container = new ContainerBuilder();
+        $extension = new RowcastExtension();
+
+        $extension->load([
+            [
+                'connection' => [
+                    'dsn' => 'sqlite::memory:',
+                ],
+                'profiler' => [
+                    'enabled' => true,
+                ],
+            ],
+        ], $container);
+
+        $container->setParameter('kernel.project_dir', sys_get_temp_dir());
+        $container->getDefinition(ConnectionProfiler::class)->setPublic(true);
+        $container->compile();
+
+        /** @var ConnectionProfiler $conn */
+        $conn = $container->get(ConnectionProfiler::class);
+        self::assertInstanceOf(ConnectionProfiler::class, $conn);
+        self::assertInstanceOf(Connection::class, $conn->getInner());
     }
 }

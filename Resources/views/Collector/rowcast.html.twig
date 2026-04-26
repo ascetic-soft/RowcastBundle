@@ -1,0 +1,125 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% block toolbar %}
+    {% if collector.queryCount > 0 %}
+        {% set icon %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        {% endset %}
+        {% set text %}
+            <div class="sf-toolbar-info-piece">
+                <b>Rowcast</b>
+                <span>{{ collector.queryCount }} quer{{ collector.queryCount == 1 ? 'y' : 'ies' }}</span>
+            </div>
+            <div class="sf-toolbar-info-piece">
+                <b>Time</b>
+                <span>{{ collector.totalDurationMs|number_format(2) }} ms</span>
+            </div>
+            {% if collector.errorCount > 0 %}
+                <div class="sf-toolbar-info-piece sf-toolbar-status-red">
+                    <b>Errors</b>
+                    <span>{{ collector.errorCount }}</span>
+                </div>
+            {% endif %}
+            {% if collector.slowCount > 0 %}
+                <div class="sf-toolbar-info-piece sf-toolbar-status-yellow">
+                    <b>Slow</b>
+                    <span>{{ collector.slowCount }}</span>
+                </div>
+            {% endif %}
+        {% endset %}
+        {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: true }) }}
+    {% endif %}
+{% endblock %}
+
+{% block menu %}
+    <span class="label">
+        <span class="icon">{{ include('@WebProfiler/Icon/database.svg') }}</span>
+        <strong>Rowcast</strong>
+        <span class="count">
+            <span>{{ collector.queryCount }}</span>
+            <span>{{ collector.totalDurationMs|number_format(0) }} ms</span>
+        </span>
+    </span>
+{% endblock %}
+
+{% block panel %}
+    <h2>Rowcast SQL</h2>
+    <div class="metrics">
+        <div class="metric">
+            <span class="value">{{ collector.queryCount }}</span>
+            <span class="label">Queries</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.totalDurationMs|number_format(2) }}</span>
+            <span class="label">Total time (ms)</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.errorCount }}</span>
+            <span class="label">Errors</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.slowCount }}</span>
+            <span class="label">Slow</span>
+        </div>
+    </div>
+
+    {% if collector.duplicates|length > 0 %}
+        <h3>Possible repeated queries (same fingerprint)</h3>
+        <table class="alt">
+            <thead>
+                <tr>
+                    <th>Count</th>
+                    <th>Total ms</th>
+                    <th>Fingerprint</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in collector.duplicates %}
+                    <tr>
+                        <td>{{ d.count }}</td>
+                        <td>{{ d.total_duration_ms|number_format(2) }}</td>
+                        <td><code>{{ d.fingerprint|e }}</code></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <h3>Queries</h3>
+    {% if collector.profiles is empty %}
+        <p class="empty">No SQL recorded for this request.</p>
+    {% else %}
+        <table class="alt">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>ms</th>
+                    <th>Op</th>
+                    <th>Type</th>
+                    <th>Rows</th>
+                    <th>SQL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in collector.profiles %}
+                    <tr class="{{ p.error_class ? 'status-error' : (p.slow ? 'status-warning' : '') }}">
+                        <td>{{ loop.index }}</td>
+                        <td>{{ p.duration_ms|number_format(3) }}</td>
+                        <td><code>{{ p.operation|e }}</code></td>
+                        <td>{{ p.statement_type|e }}</td>
+                        <td>{{ p.row_count is null ? '–' : p.row_count }}</td>
+                        <td>
+                            <pre style="white-space:pre-wrap;margin:0">{{ p.sql_normalized|e }}</pre>
+                            {% if p.params is not empty %}
+                                <details><summary>Params</summary>{{ profiler_dump(p.params, maxDepth=2) }}</details>
+                            {% endif %}
+                            {% if p.error_message %}
+                                <p class="text-muted">{{ p.error_class|e }}: {{ p.error_message|e }}</p>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}
